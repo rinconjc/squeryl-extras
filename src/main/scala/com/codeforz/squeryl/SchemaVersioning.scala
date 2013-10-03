@@ -41,7 +41,7 @@ trait SchemaVersioning extends Schema with Logging{
     Option(getClass.getResourceAsStream(schemaDir + file)) foreach{is=>
       withConnection{con=>
         Source.fromInputStream(is).mkString.split(";") foreach{stmt =>
-          con.createStatement().execute(stmt)
+          if(!stmt.trim.isEmpty) con.createStatement().execute(stmt)
         }
       }
     }
@@ -73,10 +73,14 @@ trait SchemaVersioning extends Schema with Logging{
       info("Existing tables: " + tableNames)
       if(tableNames.isEmpty){
         createSchema()
+//        exec("setup" + ".sql")
         schemaInfo.insert(SchemaInfo("MAIN", version))
         info("Database schema created")
       }else{
-        val dbVersion = from(schemaInfo)(d=>select(d.version)).head
+        val dbVersion = tableNames.find(_.equalsIgnoreCase("schemaInfo")) match{
+          case Some(_) => from(schemaInfo)(d=>select(d.version)).head
+          case _ => 1
+        }
         for(r<-dbVersion + 1 to version){
           info("upgrading db to version " +  r)
           exec("update_" + r + ".sql")
