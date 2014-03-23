@@ -73,7 +73,7 @@ trait SchemaVersioning extends Schema with Logging{
       info("Existing tables: " + tableNames)
       if(tableNames.isEmpty){
         createSchema()
-//        exec("setup" + ".sql")
+        exec("initial.sql")
         schemaInfo.insert(SchemaInfo("MAIN", version))
         info("Database schema created")
       }else{
